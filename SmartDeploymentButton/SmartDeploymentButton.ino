@@ -34,12 +34,16 @@ void setupWifi() {
 
 void setup() {
   delay( 3000 ); // power-up safety delay
-  Serial.begin(115200);
+
   setupWifi();
+
+  Serial.begin(9600);
+
+  Serial.println(WiFi.localIP().toString());
 }
 
 
 void loop()
 {
-    
+
 }
