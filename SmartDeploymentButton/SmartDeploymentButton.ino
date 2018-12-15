@@ -11,8 +11,10 @@ const char* mqttPassword = FILL_MQTT_PASSWORD_HERE;
 // FILL your team ID here:
 #define TEAMID "TeamX"
 
-#define MQTT_PUBLISH_TOPIC "iot-workshop/echo"
+#define MQTT_PUBLISH_TOPIC "build/" TEAMID "/command"
 #define MQTT_SUBSCRIBE_TOPIC ("build/" TEAMID "/state")
+
+#define BUTTON_PIN  d2
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -81,11 +83,29 @@ void setup() {
       Serial.println("MQTT connected");
     }
   }
+
+  pinMode(BUTTON_PIN, INPUT_PULLUP);
 }
 
+int lastButtonState = HIGH;
 
 void loop()
 {
+  while (!client.connected()) {
+    Serial.print("Attempting MQTT connection...");
+    if (client.connect(TEAMID, mqttUsername, mqttPassword)) {
+      Serial.println("MQTT reconnected");
+    }
+  }
+
+  int buttonState = digitalRead(BUTTON_PIN);
+  if(buttonState != lastButtonState) {
+      lastButtonState = buttonState;
+      if (buttonState == HIGH)
+      {
+        client.publish(MQTT_PUBLISH_TOPIC, "Deploy");
+      }
+  }
 
 }
 
