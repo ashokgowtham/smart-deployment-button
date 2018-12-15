@@ -1,6 +1,9 @@
 #include "ESP8266WiFi.h"
 #include <PubSubClient.h>
 
+#define FASTLED_ESP8266_NODEMCU_PIN_ORDER
+#include <FastLED.h>
+
 const char* wifi_ssid = FILL_SSID_HERE;
 const char* wifi_password = FILL_PASSWORD_HERE;
 const char* mqttServer = FILL_MQTT_SERVER_HERE;
@@ -14,10 +17,19 @@ const char* mqttPassword = FILL_MQTT_PASSWORD_HERE;
 #define MQTT_PUBLISH_TOPIC "build/" TEAMID "/command"
 #define MQTT_SUBSCRIBE_TOPIC ("build/" TEAMID "/state")
 
-#define BUTTON_PIN  d2
+#define BUTTON_PIN  D2
+#define FASTLED_PIN 1
+
+#define NUM_LEDS    1
+#define BRIGHTNESS  255
+#define LED_TYPE    WS2812
+#define COLOR_ORDER GRB
+
+#define UPDATES_PER_SECOND 100
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+CRGB leds[NUM_LEDS];
 
 
 void setupWifi() {
@@ -53,16 +65,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println("message: ");
   Serial.println((char*)payload);
 
-  if(strcmp((char*)payload, "Building")==0) {
-    Serial.println("Red");
+  if(strncmp((char*)payload, "Building", length)==0) {
+    leds[0] = CRGB::Yellow;
   }
 
-  if(strcmp((char*)payload, "Passed")==0) {
-    Serial.println("Green");
+  if(strncmp((char*)payload, "Passed", length)==0) {
+    leds[0] = CRGB::Lime;
   }
 
-  if(strcmp((char*)payload, "Failed")==0) {
-    Serial.println("Amber");
+  if(strncmp((char*)payload, "Failed", length)==0) {
+    leds[0] = CRGB::Red;
   }
 }
 
@@ -77,6 +89,8 @@ void setup() {
   client.setServer(mqttServer, mqttPort);
   client.setCallback(callback);
 
+  client.subscribe(MQTT_SUBSCRIBE_TOPIC);
+
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     if (client.connect(TEAMID, mqttUsername, mqttPassword)) {
@@ -85,6 +99,9 @@ void setup() {
   }
 
   pinMode(BUTTON_PIN, INPUT_PULLUP);
+
+  FastLED.addLeds<LED_TYPE, FASTLED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+  FastLED.setBrightness(  BRIGHTNESS );
 }
 
 int lastButtonState = HIGH;
@@ -106,6 +123,5 @@ void loop()
         client.publish(MQTT_PUBLISH_TOPIC, "Deploy");
       }
   }
-
 }
 
