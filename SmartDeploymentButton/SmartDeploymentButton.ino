@@ -1,18 +1,18 @@
 #include "ESP8266WiFi.h"
 #include <PubSubClient.h>
 
-const char* wifi_ssid = "FILL_SSID_HERE";
-const char* wifi_password = "FILL_PASSWORD_HERE";
-const char* mqttServer = "FILL_MQTT_SERVER_HERE";
-const int   mqttPort = 12345;
-const char* mqttUsername = "FILL_MQTT_USERNAME_HERE";
-const char* mqttPassword = "FILL_MQTT_PASSWORD_HERE";
+const char* wifi_ssid = FILL_SSID_HERE;
+const char* wifi_password = FILL_PASSWORD_HERE;
+const char* mqttServer = FILL_MQTT_SERVER_HERE;
+const int   mqttPort = FILL_MQTT_PORT_HERE;
+const char* mqttUsername = FILL_MQTT_USERNAME_HERE;
+const char* mqttPassword = FILL_MQTT_PASSWORD_HERE;
 
 // FILL your team ID here:
 #define TEAMID "TeamX"
 
 #define MQTT_PUBLISH_TOPIC "iot-workshop/echo"
-#define MQTT_SUBSCRIBE_TOPIC "iot-workshop/#"
+#define MQTT_SUBSCRIBE_TOPIC ("build/" TEAMID "/state")
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -50,6 +50,18 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println(topic);
   Serial.println("message: ");
   Serial.println((char*)payload);
+
+  if(strcmp((char*)payload, "Building")==0) {
+    Serial.println("Red");
+  }
+
+  if(strcmp((char*)payload, "Passed")==0) {
+    Serial.println("Green");
+  }
+
+  if(strcmp((char*)payload, "Failed")==0) {
+    Serial.println("Amber");
+  }
 }
 
 
@@ -66,7 +78,7 @@ void setup() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     if (client.connect(TEAMID, mqttUsername, mqttPassword)) {
-      client.publish(MQTT_PUBLISH_TOPIC, TEAMID " connected");
+      Serial.println("MQTT connected");
     }
   }
 }
@@ -76,5 +88,4 @@ void loop()
 {
 
 }
-
 
